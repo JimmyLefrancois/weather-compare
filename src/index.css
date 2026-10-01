@@ -1,0 +1,20 @@
+:root {
+  color-scheme: light;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f4f6f9;
+  color: #1a1f2b;
+}
+
+#root {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
