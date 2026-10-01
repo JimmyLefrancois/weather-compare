@@ -38,6 +38,23 @@ export function daysBetween(start: string, end: string): number {
 /** The archive API lags a few days behind real time; keep a safety margin. */
 export const ARCHIVE_LAG_DAYS = 5;
 
+/**
+ * Converts an ISO yyyy-MM-dd string into a local (non-UTC) Date object,
+ * suitable for MUI date pickers which operate on local calendar dates.
+ */
+export function isoToLocalDate(iso: string): Date {
+  const [year, month, day] = iso.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+/** Converts a local (non-UTC) Date back into an ISO yyyy-MM-dd string. */
+export function localDateToISO(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export function today(): string {
   return formatISODate(new Date());
 }

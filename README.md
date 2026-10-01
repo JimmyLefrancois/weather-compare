@@ -39,6 +39,11 @@ déficit de pluie.
 ## Stack technique
 
 - React 19 + TypeScript + Vite
+- [MUI (Material UI)](https://mui.com/) pour l'interface Material Design,
+  avec une mise en page **mobile-first** (barre d'action "Comparer" fixée en
+  bas d'écran, listes et cartes empilées verticalement, grille responsive à
+  partir des écrans ≥600px).
+- MUI X Date Pickers (+ date-fns, locale FR) pour la sélection de dates.
 - Recharts pour les graphiques
 - 100% front-end : aucun backend requis, tous les appels API se font
   directement depuis le navigateur.

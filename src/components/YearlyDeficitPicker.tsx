@@ -9,6 +9,13 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import Chip from "@mui/material/Chip";
+import type { ChipProps } from "@mui/material/Chip";
+import WaterDropIcon from "@mui/icons-material/WaterDrop";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import { useTheme } from "@mui/material/styles";
 import type { YearlyPeriodSummary } from "../types";
 
 interface YearlyDeficitPickerProps {
@@ -18,10 +25,10 @@ interface YearlyDeficitPickerProps {
   onSelect: (year: number) => void;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  deficit: "#d9534f",
-  normal: "#5bc0de",
-  surplus: "#5cb85c",
+const STATUS_CHIP_COLOR: Record<string, ChipProps["color"]> = {
+  deficit: "error",
+  normal: "info",
+  surplus: "success",
 };
 
 export function YearlyDeficitPicker({
@@ -30,6 +37,13 @@ export function YearlyDeficitPicker({
   selectedYear,
   onSelect,
 }: YearlyDeficitPickerProps) {
+  const theme = useTheme();
+  const statusColor: Record<string, string> = {
+    deficit: theme.palette.error.main,
+    normal: theme.palette.info.main,
+    surplus: theme.palette.success.main,
+  };
+
   const chartData = [...years]
     .sort((a, b) => a.year - b.year)
     .map((y) => ({
@@ -39,23 +53,21 @@ export function YearlyDeficitPicker({
     }));
 
   return (
-    <div className="yearly-picker">
-      <p className="hint">
+    <Stack spacing={1.5}>
+      <Typography variant="body2" color="text.secondary">
         Normale calculée sur {years.length} ans pour cette même période (mois/
         jours) : <strong>{normalPrecipitation} mm</strong>. Sélectionnez une
         année sans déficit pour la comparaison.
-      </p>
-      <ResponsiveContainer width="100%" height={220}>
-        <BarChart data={chartData}>
+      </Typography>
+      <ResponsiveContainer width="100%" height={200}>
+        <BarChart data={chartData} margin={{ top: 8, right: 8, left: -20 }}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="year" />
-          <YAxis unit=" mm" />
-          <Tooltip
-            formatter={(value) => [`${value} mm`, "Précipitations"]}
-          />
+          <XAxis dataKey="year" tick={{ fontSize: 11 }} />
+          <YAxis unit=" mm" tick={{ fontSize: 11 }} />
+          <Tooltip formatter={(value) => [`${value} mm`, "Précipitations"]} />
           <ReferenceLine
             y={normalPrecipitation}
-            stroke="#888"
+            stroke={theme.palette.text.secondary}
             strokeDasharray="4 4"
             label={{ value: "Normale", position: "insideTopRight", fontSize: 11 }}
           />
@@ -66,34 +78,43 @@ export function YearlyDeficitPicker({
               if (payload) onSelect(payload.year);
             }}
             cursor="pointer"
+            radius={[4, 4, 0, 0]}
           >
             {chartData.map((entry) => (
               <Cell
                 key={entry.year}
-                fill={STATUS_COLORS[entry.status]}
-                stroke={selectedYear === entry.year ? "#222" : undefined}
+                fill={statusColor[entry.status]}
+                stroke={selectedYear === entry.year ? theme.palette.text.primary : undefined}
                 strokeWidth={selectedYear === entry.year ? 2 : 0}
               />
             ))}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-      <div className="year-buttons">
+      <Stack
+        direction="row"
+        spacing={1}
+        useFlexGap
+        sx={{ flexWrap: "wrap", rowGap: 1 }}
+      >
         {chartData.map((entry) => (
-          <button
+          <Chip
             key={entry.year}
-            type="button"
-            className={
-              (selectedYear === entry.year ? "selected " : "") + entry.status
+            label={`${entry.year} · ${entry.precipitation} mm`}
+            color={STATUS_CHIP_COLOR[entry.status]}
+            variant={selectedYear === entry.year ? "filled" : "outlined"}
+            icon={
+              entry.status === "deficit" ? (
+                <WarningAmberIcon />
+              ) : entry.status === "surplus" ? (
+                <WaterDropIcon />
+              ) : undefined
             }
             onClick={() => onSelect(entry.year)}
-          >
-            {entry.year} &middot; {entry.precipitation} mm
-            {entry.status === "deficit" && " ⚠️"}
-            {entry.status === "surplus" && " 💧"}
-          </button>
+            clickable
+          />
         ))}
-      </div>
-    </div>
+      </Stack>
+    </Stack>
   );
 }

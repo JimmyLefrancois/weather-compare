@@ -1,3 +1,12 @@
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Paper from "@mui/material/Paper";
+import Radio from "@mui/material/Radio";
+import Typography from "@mui/material/Typography";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
 import type { ComparisonMode } from "../types";
 
 interface ComparisonModeSelectorProps {
@@ -39,39 +48,65 @@ export function ComparisonModeSelector({
   const needsYearsBack = mode === "normalAverage" || mode === "bestYear";
 
   return (
-    <div className="comparison-mode">
-      <h3>Mode de comparaison</h3>
-      <div className="mode-options">
+    <Stack spacing={1.5}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+          gap: 1.25,
+        }}
+      >
         {MODE_OPTIONS.map((opt) => (
-          <label key={opt.id} className="mode-option">
-            <input
-              type="radio"
-              name="comparison-mode"
+          <Paper
+            key={opt.id}
+            variant="outlined"
+            onClick={() => onChange(opt.id)}
+            sx={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 1,
+              p: 1.25,
+              cursor: "pointer",
+              borderColor: mode === opt.id ? "primary.main" : "divider",
+              borderWidth: mode === opt.id ? 2 : 1,
+              bgcolor: mode === opt.id ? "action.selected" : "transparent",
+            }}
+          >
+            <Radio
               checked={mode === opt.id}
-              onChange={() => onChange(opt.id)}
+              value={opt.id}
+              size="small"
+              sx={{ p: 0, mt: 0.25 }}
             />
-            <div>
-              <strong>{opt.label}</strong>
-              <p>{opt.hint}</p>
-            </div>
-          </label>
+            <Stack spacing={0.25}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {opt.label}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {opt.hint}
+              </Typography>
+            </Stack>
+          </Paper>
         ))}
-      </div>
+      </Box>
+
       {needsYearsBack && (
-        <label className="years-back">
-          Nombre d'années d'historique à analyser
-          <select
+        <FormControl size="small" sx={{ maxWidth: 220 }}>
+          <InputLabel id="years-back-label">Historique analysé</InputLabel>
+          <Select
+            labelId="years-back-label"
+            label="Historique analysé"
             value={yearsBack}
             onChange={(e) => onYearsBackChange(Number(e.target.value))}
           >
             {[5, 10, 15, 20, 30].map((n) => (
-              <option key={n} value={n}>
+              <MenuItem key={n} value={n}>
                 {n} ans
-              </option>
+              </MenuItem>
             ))}
-          </select>
-        </label>
+          </Select>
+        </FormControl>
       )}
-    </div>
+    </Stack>
   );
 }

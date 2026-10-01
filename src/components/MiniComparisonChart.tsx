@@ -1,4 +1,7 @@
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import { useTheme } from "@mui/material/styles";
 
 interface MiniComparisonChartProps {
   title: string;
@@ -9,9 +12,6 @@ interface MiniComparisonChartProps {
   valueB: number | null;
 }
 
-const COLOR_A = "#3b82f6";
-const COLOR_B = "#f97316";
-
 export function MiniComparisonChart({
   title,
   unit,
@@ -20,25 +20,28 @@ export function MiniComparisonChart({
   valueA,
   valueB,
 }: MiniComparisonChartProps) {
+  const theme = useTheme();
   const data = [
     { name: labelA, value: valueA ?? 0 },
     { name: labelB, value: valueB ?? 0 },
   ];
 
   return (
-    <div className="mini-chart">
-      <h4>{title}</h4>
-      <ResponsiveContainer width="100%" height={140}>
+    <Paper variant="outlined" sx={{ p: 1.25 }}>
+      <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+        {title}
+      </Typography>
+      <ResponsiveContainer width="100%" height={130}>
         <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16 }}>
           <XAxis type="number" unit={` ${unit}`} hide />
-          <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 12 }} />
+          <YAxis type="category" dataKey="name" width={70} tick={{ fontSize: 12 }} />
           <Tooltip formatter={(value) => [`${value} ${unit}`, title]} />
           <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-            <Cell fill={COLOR_A} />
-            <Cell fill={COLOR_B} />
+            <Cell fill={theme.palette.primary.main} />
+            <Cell fill={theme.palette.secondary.main} />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-    </div>
+    </Paper>
   );
 }

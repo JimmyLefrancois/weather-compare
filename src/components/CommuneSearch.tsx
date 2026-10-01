@@ -1,4 +1,17 @@
 import { useState } from "react";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import Alert from "@mui/material/Alert";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import SearchIcon from "@mui/icons-material/Search";
+import PlaceIcon from "@mui/icons-material/Place";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import type { Commune } from "../types";
 import { searchCommunesByPostalCode } from "../api/geocoding";
 
@@ -32,49 +45,74 @@ export function CommuneSearch({ onSelect, selected }: CommuneSearchProps) {
   }
 
   return (
-    <section className="panel">
-      <h2>1. Localisation</h2>
-      <form onSubmit={handleSearch} className="search-form">
-        <input
-          type="text"
-          inputMode="numeric"
-          placeholder="Code postal (ex: 38500)"
+    <Stack spacing={2}>
+      <Stack
+        component="form"
+        onSubmit={handleSearch}
+        direction="row"
+        spacing={1}
+      >
+        <TextField
+          label="Code postal"
+          placeholder="ex: 38500"
           value={postalCode}
           onChange={(e) => setPostalCode(e.target.value)}
-          maxLength={5}
+          slotProps={{ htmlInput: { inputMode: "numeric", maxLength: 5 } }}
+          size="small"
+          fullWidth
         />
-        <button type="submit" disabled={loading || postalCode.length !== 5}>
-          {loading ? "Recherche..." : "Rechercher"}
-        </button>
-      </form>
-      {error && <p className="error">{error}</p>}
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={loading || postalCode.length !== 5}
+          startIcon={
+            loading ? (
+              <CircularProgress size={16} color="inherit" />
+            ) : (
+              <SearchIcon />
+            )
+          }
+          sx={{ flexShrink: 0 }}
+        >
+          Chercher
+        </Button>
+      </Stack>
+
+      {error && <Alert severity="error">{error}</Alert>}
+
       {results.length > 1 && (
-        <ul className="commune-list">
+        <List disablePadding sx={{ bgcolor: "action.hover", borderRadius: 2 }}>
           {results.map((commune) => (
-            <li key={commune.code}>
-              <button
-                type="button"
-                className={
-                  selected?.code === commune.code ? "selected" : undefined
+            <ListItemButton
+              key={commune.code}
+              selected={selected?.code === commune.code}
+              onClick={() => onSelect(commune)}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <PlaceIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText
+                primary={commune.nom}
+                secondary={
+                  commune.population
+                    ? `${commune.population.toLocaleString("fr-FR")} habitants`
+                    : undefined
                 }
-                onClick={() => onSelect(commune)}
-              >
-                {commune.nom}
-                {commune.population
-                  ? ` (${commune.population.toLocaleString("fr-FR")} hab.)`
-                  : ""}
-              </button>
-            </li>
+              />
+            </ListItemButton>
           ))}
-        </ul>
+        </List>
       )}
+
       {selected && (
-        <p className="selected-commune">
-          📍 <strong>{selected.nom}</strong> ({selected.codePostal}) &mdash;
-          lat {selected.latitude.toFixed(3)}, lon{" "}
-          {selected.longitude.toFixed(3)}
-        </p>
+        <Chip
+          icon={<CheckCircleIcon />}
+          color="success"
+          variant="outlined"
+          label={`${selected.nom} (${selected.codePostal})`}
+          sx={{ alignSelf: "flex-start" }}
+        />
       )}
-    </section>
+    </Stack>
   );
 }

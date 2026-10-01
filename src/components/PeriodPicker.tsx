@@ -1,5 +1,14 @@
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import Chip from "@mui/material/Chip";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import type { DateRange } from "../types";
-import { PERIOD_PRESETS, latestAvailableDate } from "../lib/periods";
+import {
+  PERIOD_PRESETS,
+  isoToLocalDate,
+  latestAvailableDate,
+  localDateToISO,
+} from "../lib/periods";
 
 interface PeriodPickerProps {
   label: string;
@@ -21,41 +30,54 @@ export function PeriodPicker({
   const max = maxDate ?? latestAvailableDate();
 
   return (
-    <div className="period-picker">
-      <h3>{label}</h3>
-      <div className="preset-buttons">
+    <Stack spacing={1.5}>
+      <Typography variant="subtitle2" color="text.secondary">
+        {label}
+      </Typography>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          overflowX: "auto",
+          pb: 0.5,
+          "&::-webkit-scrollbar": { height: 4 },
+        }}
+      >
         {PERIOD_PRESETS.map((preset) => (
-          <button
+          <Chip
             key={preset.id}
-            type="button"
-            className={activePresetId === preset.id ? "selected" : undefined}
+            label={preset.label}
+            clickable
+            color={activePresetId === preset.id ? "primary" : "default"}
+            variant={activePresetId === preset.id ? "filled" : "outlined"}
             onClick={() => onPresetSelect(preset.id)}
-          >
-            {preset.label}
-          </button>
+            sx={{ flexShrink: 0 }}
+          />
         ))}
-      </div>
-      <div className="date-inputs">
-        <label>
-          Du
-          <input
-            type="date"
-            value={range.start}
-            max={range.end}
-            onChange={(e) => onChange({ ...range, start: e.target.value })}
-          />
-        </label>
-        <label>
-          Au
-          <input
-            type="date"
-            value={range.end}
-            min={range.start}
-            max={max}
-            onChange={(e) => onChange({ ...range, end: e.target.value })}
-          />
-        </label>
-      </div>
-    </div>
+      </Stack>
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+        <DatePicker
+          label="Du"
+          value={isoToLocalDate(range.start)}
+          maxDate={isoToLocalDate(range.end)}
+          onChange={(newValue) => {
+            if (newValue) onChange({ ...range, start: localDateToISO(newValue) });
+          }}
+          format="dd/MM/yyyy"
+          slotProps={{ textField: { size: "small", fullWidth: true } }}
+        />
+        <DatePicker
+          label="Au"
+          value={isoToLocalDate(range.end)}
+          minDate={isoToLocalDate(range.start)}
+          maxDate={isoToLocalDate(max)}
+          onChange={(newValue) => {
+            if (newValue) onChange({ ...range, end: localDateToISO(newValue) });
+          }}
+          format="dd/MM/yyyy"
+          slotProps={{ textField: { size: "small", fullWidth: true } }}
+        />
+      </Stack>
+    </Stack>
   );
 }
