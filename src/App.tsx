@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
@@ -120,7 +120,20 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ComparisonResult | null>(null);
 
-  const canCompare = commune !== null && periodA.start <= periodA.end;
+  // Selecting a target year later than periodA's own start year would shift
+  // period B past the archive's available data (into the future). Cap it so
+  // the dropdown never offers an inconsistent choice.
+  const maxSpecificYear = yearOf(periodA.start);
+
+  useEffect(() => {
+    if (specificYear > maxSpecificYear) {
+      setSpecificYear(maxSpecificYear);
+    }
+  }, [maxSpecificYear, specificYear]);
+
+  const periodBValid = comparisonMode !== "custom" || periodB.start <= periodB.end;
+  const canCompare =
+    commune !== null && periodA.start <= periodA.end && periodBValid;
 
   function handlePresetA(presetId: string) {
     const preset = PERIOD_PRESETS.find((p) => p.id === presetId);
@@ -302,6 +315,7 @@ export default function App() {
                 onYearsBackChange={setYearsBack}
                 specificYear={specificYear}
                 onSpecificYearChange={setSpecificYear}
+                maxSpecificYear={maxSpecificYear}
               />
               {comparisonMode === "custom" && (
                 <>
@@ -322,6 +336,11 @@ export default function App() {
                       }
                     }}
                   />
+                  {!periodBValid && (
+                    <Alert severity="warning">
+                      La date de fin de la période B doit être postérieure ou égale à sa date de début.
+                    </Alert>
+                  )}
                 </>
               )}
               {comparisonMode === "bestYear" && result?.yearlyAnalysis && (

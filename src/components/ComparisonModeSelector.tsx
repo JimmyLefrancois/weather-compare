@@ -8,7 +8,7 @@ import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import type { ComparisonMode } from "../types";
-import { ARCHIVE_START_YEAR, latestAvailableDate, yearOf } from "../lib/periods";
+import { ARCHIVE_START_YEAR } from "../lib/periods";
 
 interface ComparisonModeSelectorProps {
   mode: ComparisonMode;
@@ -17,6 +17,8 @@ interface ComparisonModeSelectorProps {
   onYearsBackChange: (years: number) => void;
   specificYear: number;
   onSpecificYearChange: (year: number) => void;
+  /** Latest year selectable without pushing period B past the available archive data. */
+  maxSpecificYear: number;
 }
 
 const MODE_OPTIONS: { id: ComparisonMode; label: string; hint: string }[] = [
@@ -54,13 +56,13 @@ export function ComparisonModeSelector({
   onYearsBackChange,
   specificYear,
   onSpecificYearChange,
+  maxSpecificYear,
 }: ComparisonModeSelectorProps) {
   const needsYearsBack = mode === "normalAverage" || mode === "bestYear";
   const needsSpecificYear = mode === "specificYear";
 
-  const maxYear = yearOf(latestAvailableDate());
   const years: number[] = [];
-  for (let y = maxYear; y >= ARCHIVE_START_YEAR; y--) {
+  for (let y = maxSpecificYear; y >= ARCHIVE_START_YEAR; y--) {
     years.push(y);
   }
 

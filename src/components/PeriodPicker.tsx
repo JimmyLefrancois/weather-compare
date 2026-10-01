@@ -4,6 +4,7 @@ import Chip from "@mui/material/Chip";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import type { DateRange } from "../types";
 import {
+  ARCHIVE_START_YEAR,
   PERIOD_PRESETS,
   isoToLocalDate,
   latestAvailableDate,
@@ -28,6 +29,7 @@ export function PeriodPicker({
   maxDate,
 }: PeriodPickerProps) {
   const max = maxDate ?? latestAvailableDate();
+  const archiveStart = `${ARCHIVE_START_YEAR}-01-01`;
 
   return (
     <Stack spacing={1.5}>
@@ -59,6 +61,7 @@ export function PeriodPicker({
         <DatePicker
           label="Du"
           value={isoToLocalDate(range.start)}
+          minDate={isoToLocalDate(archiveStart)}
           maxDate={isoToLocalDate(range.end)}
           onChange={(newValue) => {
             if (newValue) onChange({ ...range, start: localDateToISO(newValue) });
