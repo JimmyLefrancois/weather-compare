@@ -38,6 +38,9 @@ export function daysBetween(start: string, end: string): number {
 /** The archive API lags a few days behind real time; keep a safety margin. */
 export const ARCHIVE_LAG_DAYS = 5;
 
+/** Open-Meteo's historical archive reliably starts around 1940. */
+export const ARCHIVE_START_YEAR = 1940;
+
 /**
  * Converts an ISO yyyy-MM-dd string into a local (non-UTC) Date object,
  * suitable for MUI date pickers which operate on local calendar dates.
@@ -112,6 +115,15 @@ export function shiftRangeByYears(range: DateRange, years: number): DateRange {
     start: addYears(range.start, years),
     end: addYears(range.end, years),
   };
+}
+
+export function yearOf(iso: string): number {
+  return Number(iso.slice(0, 4));
+}
+
+/** Shifts a date range to land on a specific target year, keeping its month/day window. */
+export function shiftRangeToYear(range: DateRange, targetYear: number): DateRange {
+  return shiftRangeByYears(range, targetYear - yearOf(range.start));
 }
 
 /**

@@ -88,6 +88,7 @@ export type DeficitStatus = "deficit" | "surplus" | "normal";
 export type ComparisonMode =
   | "custom"
   | "previousYear"
+  | "specificYear"
   | "normalAverage"
   | "bestYear";
 

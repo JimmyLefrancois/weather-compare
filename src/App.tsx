@@ -40,6 +40,8 @@ import {
   latestAvailableDate,
   pastYearRanges,
   shiftRangeByYears,
+  shiftRangeToYear,
+  yearOf,
 } from "./lib/periods";
 import {
   averageIndicators,
@@ -105,6 +107,7 @@ export default function App() {
   const [comparisonMode, setComparisonMode] =
     useState<ComparisonMode>("previousYear");
   const [yearsBack, setYearsBack] = useState(10);
+  const [specificYear, setSpecificYear] = useState(() => yearOf(latestAvailableDate()) - 1);
 
   const [periodB, setPeriodB] = useState<DateRange>(() =>
     shiftRangeByYears(defaultPeriodA(), -1),
@@ -148,6 +151,8 @@ export default function App() {
         neededRanges.push(periodB);
       } else if (comparisonMode === "previousYear") {
         neededRanges.push(shiftRangeByYears(periodA, -1));
+      } else if (comparisonMode === "specificYear") {
+        neededRanges.push(shiftRangeToYear(periodA, specificYear));
       } else {
         neededRanges.push(...pastYearRanges(periodA, yearsBack));
       }
@@ -195,6 +200,19 @@ export default function App() {
           indicatorsB,
           labelA: `Période actuelle (${formatRangeLabel(periodA)})`,
           labelB: `Année précédente (${formatRangeLabel(rangeB)})`,
+          yearlyAnalysis: null,
+        });
+      } else if (comparisonMode === "specificYear") {
+        const rangeB = shiftRangeToYear(periodA, specificYear);
+        const indicatorsB = computeIndicators(
+          filterRecordsInRange(records, rangeB),
+          rangeB,
+        );
+        setResult({
+          indicatorsA,
+          indicatorsB,
+          labelA: `Période actuelle (${formatRangeLabel(periodA)})`,
+          labelB: `Année ${specificYear} (${formatRangeLabel(rangeB)})`,
           yearlyAnalysis: null,
         });
       } else if (comparisonMode === "normalAverage") {
@@ -282,6 +300,8 @@ export default function App() {
                 onChange={setComparisonMode}
                 yearsBack={yearsBack}
                 onYearsBackChange={setYearsBack}
+                specificYear={specificYear}
+                onSpecificYearChange={setSpecificYear}
               />
               {comparisonMode === "custom" && (
                 <>

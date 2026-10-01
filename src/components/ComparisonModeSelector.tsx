@@ -8,12 +8,15 @@ import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import type { ComparisonMode } from "../types";
+import { ARCHIVE_START_YEAR, latestAvailableDate, yearOf } from "../lib/periods";
 
 interface ComparisonModeSelectorProps {
   mode: ComparisonMode;
   onChange: (mode: ComparisonMode) => void;
   yearsBack: number;
   onYearsBackChange: (years: number) => void;
+  specificYear: number;
+  onSpecificYearChange: (year: number) => void;
 }
 
 const MODE_OPTIONS: { id: ComparisonMode; label: string; hint: string }[] = [
@@ -21,6 +24,11 @@ const MODE_OPTIONS: { id: ComparisonMode; label: string; hint: string }[] = [
     id: "previousYear",
     label: "Même période, année précédente",
     hint: "Compare aux mêmes dates il y a un an.",
+  },
+  {
+    id: "specificYear",
+    label: "Une année précise",
+    hint: "Choisissez librement n'importe quelle année passée.",
   },
   {
     id: "custom",
@@ -44,8 +52,17 @@ export function ComparisonModeSelector({
   onChange,
   yearsBack,
   onYearsBackChange,
+  specificYear,
+  onSpecificYearChange,
 }: ComparisonModeSelectorProps) {
   const needsYearsBack = mode === "normalAverage" || mode === "bestYear";
+  const needsSpecificYear = mode === "specificYear";
+
+  const maxYear = yearOf(latestAvailableDate());
+  const years: number[] = [];
+  for (let y = maxYear; y >= ARCHIVE_START_YEAR; y--) {
+    years.push(y);
+  }
 
   return (
     <Stack spacing={1.5}>
@@ -102,6 +119,25 @@ export function ComparisonModeSelector({
             {[5, 10, 15, 20, 30].map((n) => (
               <MenuItem key={n} value={n}>
                 {n} ans
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
+
+      {needsSpecificYear && (
+        <FormControl size="small" sx={{ maxWidth: 220 }}>
+          <InputLabel id="specific-year-label">Année à comparer</InputLabel>
+          <Select
+            labelId="specific-year-label"
+            label="Année à comparer"
+            value={specificYear}
+            onChange={(e) => onSpecificYearChange(Number(e.target.value))}
+            MenuProps={{ slotProps: { paper: { sx: { maxHeight: 320 } } } }}
+          >
+            {years.map((y) => (
+              <MenuItem key={y} value={y}>
+                {y}
               </MenuItem>
             ))}
           </Select>

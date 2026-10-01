@@ -14,8 +14,10 @@ déficit de pluie.
    exacte.
 2. **Sélection de période** — raccourcis (7 jours, 30 jours, 3/6/12 derniers
    mois, depuis le 1er janvier) ou dates personnalisées.
-3. **4 modes de comparaison** :
+3. **5 modes de comparaison** :
    - Même période l'année précédente
+   - Une année précise (n'importe quelle année depuis 1940 jusqu'à l'an
+     dernier, sélectionnée librement dans une liste)
    - Période personnalisée (dates libres)
    - Normale climatique (moyenne sur 5 à 30 ans, configurable)
    - Année sans déficit de pluie : affiche le cumul de précipitations de
