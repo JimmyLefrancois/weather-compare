@@ -304,95 +304,92 @@ export default function App() {
                   />
                 </>
               )}
-            </Stack>
-          </StepCard>
-
-          {error && <Alert severity="error">{error}</Alert>}
-
-          {result && (
-            <StepCard step={4} icon={<InsightsIcon fontSize="small" />} title="Résultats">
-              <Stack spacing={2}>
-                {result.yearlyAnalysis && comparisonMode === "bestYear" && (
+              {comparisonMode === "bestYear" && result?.yearlyAnalysis && (
+                <>
+                  <Divider />
                   <YearlyDeficitPicker
                     years={result.yearlyAnalysis.years}
                     normalPrecipitation={result.yearlyAnalysis.normalPrecipitation}
                     selectedYear={selectedYear}
                     onSelect={setSelectedYear}
                   />
-                )}
+                </>
+              )}
+            </Stack>
+          </StepCard>
 
-                {effectiveIndicatorsB && (
-                  <>
-                    <Divider />
-                    <IndicatorsComparisonList
-                      labelA={result.labelA}
-                      labelB={effectiveLabelB}
-                      a={result.indicatorsA}
-                      b={effectiveIndicatorsB}
-                    />
+          {error && <Alert severity="error">{error}</Alert>}
 
-                    <Divider />
-                    <Box
-                      sx={{
-                        display: "grid",
-                        gridTemplateColumns: {
-                          xs: "1fr",
-                          sm: "1fr 1fr",
-                        },
-                        gap: 1.5,
-                      }}
-                    >
-                      <MiniComparisonChart
-                        title="Précipitations"
-                        unit="mm"
-                        labelA="A"
-                        labelB="B"
-                        valueA={result.indicatorsA.precipitationTotal}
-                        valueB={effectiveIndicatorsB.precipitationTotal}
-                      />
-                      <MiniComparisonChart
-                        title="Température moyenne"
-                        unit="°C"
-                        labelA="A"
-                        labelB="B"
-                        valueA={result.indicatorsA.tempAvg}
-                        valueB={effectiveIndicatorsB.tempAvg}
-                      />
-                      <MiniComparisonChart
-                        title="Jours de pluie"
-                        unit="j"
-                        labelA="A"
-                        labelB="B"
-                        valueA={result.indicatorsA.rainyDays}
-                        valueB={effectiveIndicatorsB.rainyDays}
-                      />
-                      <MiniComparisonChart
-                        title="Jours de gel"
-                        unit="j"
-                        labelA="A"
-                        labelB="B"
-                        valueA={result.indicatorsA.frostDays}
-                        valueB={effectiveIndicatorsB.frostDays}
-                      />
-                      <MiniComparisonChart
-                        title="Ensoleillement"
-                        unit="h"
-                        labelA="A"
-                        labelB="B"
-                        valueA={result.indicatorsA.sunshineHoursTotal}
-                        valueB={effectiveIndicatorsB.sunshineHoursTotal}
-                      />
-                      <MiniComparisonChart
-                        title="Vent moyen"
-                        unit="km/h"
-                        labelA="A"
-                        labelB="B"
-                        valueA={result.indicatorsA.windAvg}
-                        valueB={effectiveIndicatorsB.windAvg}
-                      />
-                    </Box>
-                  </>
-                )}
+          {result && effectiveIndicatorsB && (
+            <StepCard step={4} icon={<InsightsIcon fontSize="small" />} title="Résultats">
+              <Stack spacing={2}>
+                <IndicatorsComparisonList
+                  labelA={result.labelA}
+                  labelB={effectiveLabelB}
+                  a={result.indicatorsA}
+                  b={effectiveIndicatorsB}
+                />
+
+                <Divider />
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: {
+                      xs: "1fr",
+                      sm: "1fr 1fr",
+                    },
+                    gap: 1.5,
+                  }}
+                >
+                  <MiniComparisonChart
+                    title="Précipitations"
+                    unit="mm"
+                    labelA="A"
+                    labelB="B"
+                    valueA={result.indicatorsA.precipitationTotal}
+                    valueB={effectiveIndicatorsB.precipitationTotal}
+                  />
+                  <MiniComparisonChart
+                    title="Température moyenne"
+                    unit="°C"
+                    labelA="A"
+                    labelB="B"
+                    valueA={result.indicatorsA.tempAvg}
+                    valueB={effectiveIndicatorsB.tempAvg}
+                  />
+                  <MiniComparisonChart
+                    title="Jours de pluie"
+                    unit="j"
+                    labelA="A"
+                    labelB="B"
+                    valueA={result.indicatorsA.rainyDays}
+                    valueB={effectiveIndicatorsB.rainyDays}
+                  />
+                  <MiniComparisonChart
+                    title="Jours de gel"
+                    unit="j"
+                    labelA="A"
+                    labelB="B"
+                    valueA={result.indicatorsA.frostDays}
+                    valueB={effectiveIndicatorsB.frostDays}
+                  />
+                  <MiniComparisonChart
+                    title="Ensoleillement"
+                    unit="h"
+                    labelA="A"
+                    labelB="B"
+                    valueA={result.indicatorsA.sunshineHoursTotal}
+                    valueB={effectiveIndicatorsB.sunshineHoursTotal}
+                  />
+                  <MiniComparisonChart
+                    title="Vent moyen"
+                    unit="km/h"
+                    labelA="A"
+                    labelB="B"
+                    valueA={result.indicatorsA.windAvg}
+                    valueB={effectiveIndicatorsB.windAvg}
+                  />
+                </Box>
               </Stack>
             </StepCard>
           )}
