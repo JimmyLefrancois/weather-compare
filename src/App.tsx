@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
@@ -12,6 +12,8 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
 import Divider from "@mui/material/Divider";
+import Switch from "@mui/material/Switch";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Paper from "@mui/material/Paper";
 import CircularProgress from "@mui/material/CircularProgress";
 import WbSunnyIcon from "@mui/icons-material/WbSunny";
@@ -51,6 +53,7 @@ import {
 import { analyzeYearlyHistory, type YearlyAnalysis } from "./lib/yearlyAnalysis";
 
 interface ComparisonResult {
+  communeName: string;
   indicatorsA: PeriodIndicators;
   indicatorsB: PeriodIndicators | null;
   labelA: string;
@@ -98,8 +101,57 @@ function StepCard({
   );
 }
 
+/** Key indicators rendered as mini charts for a pair of periods. */
+function MetricCharts({
+  a,
+  b,
+  labelA,
+  labelB,
+}: {
+  a: PeriodIndicators;
+  b: PeriodIndicators;
+  labelA: string;
+  labelB: string;
+}) {
+  const metrics: {
+    title: string;
+    unit: string;
+    get: (p: PeriodIndicators) => number | null;
+  }[] = [
+    { title: "Précipitations", unit: "mm", get: (p) => p.precipitationTotal },
+    { title: "Température moyenne", unit: "°C", get: (p) => p.tempAvg },
+    { title: "Jours de pluie", unit: "j", get: (p) => p.rainyDays },
+    { title: "Jours de gel", unit: "j", get: (p) => p.frostDays },
+    { title: "Ensoleillement", unit: "h", get: (p) => p.sunshineHoursTotal },
+    { title: "Vent moyen", unit: "km/h", get: (p) => p.windAvg },
+  ];
+  return (
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+        gap: 1.5,
+      }}
+    >
+      {metrics.map((m) => (
+        <MiniComparisonChart
+          key={m.title}
+          title={m.title}
+          unit={m.unit}
+          labelA={labelA}
+          labelB={labelB}
+          valueA={m.get(a)}
+          valueB={m.get(b)}
+        />
+      ))}
+    </Box>
+  );
+}
+
 export default function App() {
   const [commune, setCommune] = useState<Commune | null>(null);
+  const [compareOtherCommune, setCompareOtherCommune] = useState(false);
+  const [communeB, setCommuneB] = useState<Commune | null>(null);
 
   const [periodA, setPeriodA] = useState<DateRange>(defaultPeriodA());
   const [presetA, setPresetA] = useState<string | null>("3m");
@@ -119,6 +171,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ComparisonResult | null>(null);
+  const [resultB, setResultB] = useState<ComparisonResult | null>(null);
 
   // Selecting a target year later than periodA's own start year would shift
   // period B past the archive's available data (into the future). Cap it so
@@ -133,7 +186,27 @@ export default function App() {
 
   const periodBValid = comparisonMode !== "custom" || periodB.start <= periodB.end;
   const canCompare =
-    commune !== null && periodA.start <= periodA.end && periodBValid;
+    commune !== null &&
+    (!compareOtherCommune || communeB !== null) &&
+    periodA.start <= periodA.end &&
+    periodBValid;
+
+  function resetResults() {
+    setResult(null);
+    setResultB(null);
+    setSelectedYear(null);
+    setError(null);
+  }
+
+  function handleCommuneChange(c: Commune | null) {
+    setCommune(c);
+    resetResults();
+  }
+
+  function handleCommuneBChange(c: Commune | null) {
+    setCommuneB(c);
+    resetResults();
+  }
 
   function handlePresetA(presetId: string) {
     const preset = PERIOD_PRESETS.find((p) => p.id === presetId);
@@ -156,6 +229,7 @@ export default function App() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setResultB(null);
     setSelectedYear(null);
 
     try {
@@ -177,80 +251,26 @@ export default function App() {
           ? latestAvailableDate()
           : fetchRange.end;
 
-      const series = await fetchDailyWeatherSeries(
-        commune.latitude,
-        commune.longitude,
-        fetchRange.start,
-        safeEnd,
-      );
-      const records: DailyWeatherRecord[] = unpackSeries(series);
-
-      const indicatorsA = computeIndicators(
-        filterRecordsInRange(records, periodA),
-        periodA,
-      );
-
-      if (comparisonMode === "custom") {
-        const indicatorsB = computeIndicators(
-          filterRecordsInRange(records, periodB),
-          periodB,
-        );
-        setResult({
-          indicatorsA,
-          indicatorsB,
-          labelA: `Période A (${formatRangeLabel(periodA)})`,
-          labelB: `Période B (${formatRangeLabel(periodB)})`,
-          yearlyAnalysis: null,
-        });
-      } else if (comparisonMode === "previousYear") {
-        const rangeB = shiftRangeByYears(periodA, -1);
-        const indicatorsB = computeIndicators(
-          filterRecordsInRange(records, rangeB),
-          rangeB,
-        );
-        setResult({
-          indicatorsA,
-          indicatorsB,
-          labelA: `Période actuelle (${formatRangeLabel(periodA)})`,
-          labelB: `Année précédente (${formatRangeLabel(rangeB)})`,
-          yearlyAnalysis: null,
-        });
-      } else if (comparisonMode === "specificYear") {
-        const rangeB = shiftRangeToYear(periodA, specificYear);
-        const indicatorsB = computeIndicators(
-          filterRecordsInRange(records, rangeB),
-          rangeB,
-        );
-        setResult({
-          indicatorsA,
-          indicatorsB,
-          labelA: `Période actuelle (${formatRangeLabel(periodA)})`,
-          labelB: `Année ${specificYear} (${formatRangeLabel(rangeB)})`,
-          yearlyAnalysis: null,
-        });
-      } else if (comparisonMode === "normalAverage") {
-        const analysis = analyzeYearlyHistory(records, periodA, yearsBack);
-        const indicatorsB = averageIndicators(
-          analysis.years.map((y) => y.indicators),
-          periodA,
-        );
-        setResult({
-          indicatorsA,
-          indicatorsB,
-          labelA: `Période actuelle (${formatRangeLabel(periodA)})`,
-          labelB: `Normale climatique (${yearsBack} ans)`,
-          yearlyAnalysis: analysis,
-        });
-      } else {
-        // bestYear: wait for the user to pick a specific year from the chart.
-        const analysis = analyzeYearlyHistory(records, periodA, yearsBack);
-        setResult({
-          indicatorsA,
-          indicatorsB: null,
-          labelA: `Période actuelle (${formatRangeLabel(periodA)})`,
-          labelB: "Sélectionnez une année ci-dessous",
-          yearlyAnalysis: analysis,
-        });
+      const otherCommune = compareOtherCommune ? communeB : null;
+      const [series, seriesB] = await Promise.all([
+        fetchDailyWeatherSeries(
+          commune.latitude,
+          commune.longitude,
+          fetchRange.start,
+          safeEnd,
+        ),
+        otherCommune
+          ? fetchDailyWeatherSeries(
+              otherCommune.latitude,
+              otherCommune.longitude,
+              fetchRange.start,
+              safeEnd,
+            )
+          : Promise.resolve(null),
+      ]);
+      setResult(buildResult(unpackSeries(series), commune.nom));
+      if (seriesB && otherCommune) {
+        setResultB(buildResult(unpackSeries(seriesB), otherCommune.nom));
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue.");
@@ -259,20 +279,94 @@ export default function App() {
     }
   }
 
-  const selectedYearSummary = useMemo(() => {
-    if (!result?.yearlyAnalysis || selectedYear === null) return null;
-    return result.yearlyAnalysis.years.find((y) => y.year === selectedYear) ?? null;
-  }, [result, selectedYear]);
+  // Same filters applied to one locality's daily records.
+  function buildResult(
+    records: DailyWeatherRecord[],
+    communeName: string,
+  ): ComparisonResult {
+    const indicatorsA = computeIndicators(
+      filterRecordsInRange(records, periodA),
+      periodA,
+    );
+    const labelA = `Période actuelle (${formatRangeLabel(periodA)})`;
+    const indicatorsOver = (range: DateRange) =>
+      computeIndicators(filterRecordsInRange(records, range), range);
 
-  const effectiveIndicatorsB =
-    comparisonMode === "bestYear"
-      ? (selectedYearSummary?.indicators ?? null)
-      : (result?.indicatorsB ?? null);
+    if (comparisonMode === "custom") {
+      return {
+        communeName,
+        indicatorsA,
+        indicatorsB: indicatorsOver(periodB),
+        labelA: `Période A (${formatRangeLabel(periodA)})`,
+        labelB: `Période B (${formatRangeLabel(periodB)})`,
+        yearlyAnalysis: null,
+      };
+    }
+    if (comparisonMode === "previousYear") {
+      const rangeB = shiftRangeByYears(periodA, -1);
+      return {
+        communeName,
+        indicatorsA,
+        indicatorsB: indicatorsOver(rangeB),
+        labelA,
+        labelB: `Année précédente (${formatRangeLabel(rangeB)})`,
+        yearlyAnalysis: null,
+      };
+    }
+    if (comparisonMode === "specificYear") {
+      const rangeB = shiftRangeToYear(periodA, specificYear);
+      return {
+        communeName,
+        indicatorsA,
+        indicatorsB: indicatorsOver(rangeB),
+        labelA,
+        labelB: `Année ${specificYear} (${formatRangeLabel(rangeB)})`,
+        yearlyAnalysis: null,
+      };
+    }
+    const analysis = analyzeYearlyHistory(records, periodA, yearsBack);
+    if (comparisonMode === "normalAverage") {
+      return {
+        communeName,
+        indicatorsA,
+        indicatorsB: averageIndicators(
+          analysis.years.map((y) => y.indicators),
+          periodA,
+        ),
+        labelA,
+        labelB: `Normale climatique (${yearsBack} ans)`,
+        yearlyAnalysis: analysis,
+      };
+    }
+    // bestYear: the user picks the year from the chart.
+    return {
+      communeName,
+      indicatorsA,
+      indicatorsB: null,
+      labelA,
+      labelB: "Sélectionnez une année ci-dessous",
+      yearlyAnalysis: analysis,
+    };
+  }
 
-  const effectiveLabelB =
-    comparisonMode === "bestYear" && selectedYearSummary
-      ? `Année ${selectedYearSummary.year} (${formatRangeLabel(selectedYearSummary.range)})`
-      : (result?.labelB ?? "");
+  function resolveSide(res: ComparisonResult | null) {
+    if (!res) return null;
+    if (comparisonMode !== "bestYear") {
+      return res.indicatorsB
+        ? { indicatorsB: res.indicatorsB, labelB: res.labelB }
+        : null;
+    }
+    const summary = res.yearlyAnalysis?.years.find((y) => y.year === selectedYear);
+    return summary
+      ? {
+          indicatorsB: summary.indicators,
+          labelB: `Année ${summary.year} (${formatRangeLabel(summary.range)})`,
+        }
+      : null;
+  }
+
+  const sideX = resolveSide(result);
+  const sideY = resolveSide(resultB);
 
   return (
     <Box sx={{ minHeight: "100%", display: "flex", flexDirection: "column" }}>
@@ -293,7 +387,29 @@ export default function App() {
           </Typography>
 
           <StepCard step={1} icon={<PlaceIcon fontSize="small" />} title="Localisation">
-            <CommuneSearch onSelect={setCommune} selected={commune} />
+            <Stack spacing={2}>
+              <CommuneSearch onSelect={handleCommuneChange} selected={commune} />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={compareOtherCommune}
+                    onChange={(e) => {
+                      setCompareOtherCommune(e.target.checked);
+                      resetResults();
+                      if (!e.target.checked) setCommuneB(null);
+                    }}
+                  />
+                }
+                label="Comparer avec une autre localité"
+              />
+              {compareOtherCommune && (
+                <>
+                  <Divider />
+                  <Typography variant="subtitle2">Localité de comparaison</Typography>
+                  <CommuneSearch onSelect={handleCommuneBChange} selected={communeB} />
+                </>
+              )}
+            </Stack>
           </StepCard>
 
           <StepCard step={2} icon={<DateRangeIcon fontSize="small" />} title="Période à analyser">
@@ -359,76 +475,54 @@ export default function App() {
 
           {error && <Alert severity="error">{error}</Alert>}
 
-          {result && effectiveIndicatorsB && (
+          {result && sideX && (
             <StepCard step={4} icon={<InsightsIcon fontSize="small" />} title="Résultats">
-              <Stack spacing={2}>
-                <IndicatorsComparisonList
-                  labelA={result.labelA}
-                  labelB={effectiveLabelB}
-                  a={result.indicatorsA}
-                  b={effectiveIndicatorsB}
-                />
+              <Stack spacing={3}>
+                {[
+                  { res: result, side: sideX },
+                  ...(resultB && sideY ? [{ res: resultB, side: sideY }] : []),
+                ].map(({ res, side }) => (
+                  <Stack key={res.communeName} spacing={2}>
+                    {resultB && (
+                      <Typography variant="h6" component="h2">
+                        {res.communeName}
+                      </Typography>
+                    )}
+                    <IndicatorsComparisonList
+                      labelA={res.labelA}
+                      labelB={side.labelB}
+                      a={res.indicatorsA}
+                      b={side.indicatorsB}
+                    />
+                    <MetricCharts
+                      a={res.indicatorsA}
+                      b={side.indicatorsB}
+                      labelA="A"
+                      labelB="B"
+                    />
+                    <Divider />
+                  </Stack>
+                ))}
 
-                <Divider />
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: {
-                      xs: "1fr",
-                      sm: "1fr 1fr",
-                    },
-                    gap: 1.5,
-                  }}
-                >
-                  <MiniComparisonChart
-                    title="Précipitations"
-                    unit="mm"
-                    labelA="A"
-                    labelB="B"
-                    valueA={result.indicatorsA.precipitationTotal}
-                    valueB={effectiveIndicatorsB.precipitationTotal}
-                  />
-                  <MiniComparisonChart
-                    title="Température moyenne"
-                    unit="°C"
-                    labelA="A"
-                    labelB="B"
-                    valueA={result.indicatorsA.tempAvg}
-                    valueB={effectiveIndicatorsB.tempAvg}
-                  />
-                  <MiniComparisonChart
-                    title="Jours de pluie"
-                    unit="j"
-                    labelA="A"
-                    labelB="B"
-                    valueA={result.indicatorsA.rainyDays}
-                    valueB={effectiveIndicatorsB.rainyDays}
-                  />
-                  <MiniComparisonChart
-                    title="Jours de gel"
-                    unit="j"
-                    labelA="A"
-                    labelB="B"
-                    valueA={result.indicatorsA.frostDays}
-                    valueB={effectiveIndicatorsB.frostDays}
-                  />
-                  <MiniComparisonChart
-                    title="Ensoleillement"
-                    unit="h"
-                    labelA="A"
-                    labelB="B"
-                    valueA={result.indicatorsA.sunshineHoursTotal}
-                    valueB={effectiveIndicatorsB.sunshineHoursTotal}
-                  />
-                  <MiniComparisonChart
-                    title="Vent moyen"
-                    unit="km/h"
-                    labelA="A"
-                    labelB="B"
-                    valueA={result.indicatorsA.windAvg}
-                    valueB={effectiveIndicatorsB.windAvg}
-                  />
-                </Box>
+                {resultB && (
+                  <Stack spacing={2}>
+                    <Typography variant="h6" component="h2">
+                      {result.communeName} vs {resultB.communeName}
+                    </Typography>
+                    <IndicatorsComparisonList
+                      labelA={`${result.communeName} · ${result.labelA}`}
+                      labelB={`${resultB.communeName} · ${resultB.labelA}`}
+                      a={result.indicatorsA}
+                      b={resultB.indicatorsA}
+                    />
+                    <MetricCharts
+                      a={result.indicatorsA}
+                      b={resultB.indicatorsA}
+                      labelA={result.communeName}
+                      labelB={resultB.communeName}
+                    />
+                  </Stack>
+                )}
               </Stack>
             </StepCard>
           )}

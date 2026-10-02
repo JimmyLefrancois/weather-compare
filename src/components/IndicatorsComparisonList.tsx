@@ -91,8 +91,8 @@ export function IndicatorsComparisonList({
   return (
     <Stack spacing={1.5}>
       <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap", rowGap: 1 }}>
-        <Chip size="small" label={labelA} sx={{ bgcolor: "primary.main", color: "primary.contrastText" }} />
-        <Chip size="small" label={labelB} sx={{ bgcolor: "secondary.main", color: "secondary.contrastText" }} />
+        <Chip size="small" label={labelA} sx={{ bgcolor: "primary.main", color: "primary.contrastText", height: "auto", maxWidth: "100%", "& .MuiChip-label": { whiteSpace: "normal", py: 0.5 } }} />
+        <Chip size="small" label={labelB} sx={{ bgcolor: "secondary.main", color: "secondary.contrastText", height: "auto", maxWidth: "100%", "& .MuiChip-label": { whiteSpace: "normal", py: 0.5 } }} />
       </Stack>
 
       <Grid container spacing={1.25}>
